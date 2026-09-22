@@ -184,19 +184,21 @@ python -c "import json; [json.loads(l) for l in open('data/train.jsonl')]; print
 **実行するコマンド**
 
 ```bash
-caffeinate -i mlx_lm.lora \
-  --model mlx-community/Qwen2.5-1.5B-Instruct-4bit \
-  --train \
-  --data data \
-  --iters 300 \
-  --batch-size 4 \
-  --num-layers 16 \
-  --learning-rate 1e-4 \
-  --steps-per-report 10 \
-  --steps-per-eval 50 \
-  --save-every 100 \
-  --adapter-path adapters
+caffeinate -i mlx_lm.lora                          `# スリープを抑止しつつ LoRA 学習コマンドを起動` \
+  --model mlx-community/Qwen2.5-1.5B-Instruct-4bit `# ベースモデル（HF Hub のリポジトリ名、ステップ 2 でキャッシュ済み）` \
+  --train                                          `# 学習モードで実行（無いと評価のみ）` \
+  --data data                                      `# train.jsonl / valid.jsonl が入ったフォルダ` \
+  --iters 300                                      `# 学習ステップ数（1 ステップ = batch-size 件）` \
+  --batch-size 4                                   `# 1 ステップで同時に見るサンプル数（メモリ不足なら 2）` \
+  --num-layers 16                                  `# 後ろから何層にアダプタを付けるか（全 28 層中）` \
+  --learning-rate 1e-4                             `# 1 ステップの更新の大きさ（デフォルト 1e-5 の 10 倍）` \
+  --steps-per-report 10                            `# Train loss を表示する間隔` \
+  --steps-per-eval 50                              `# Val loss を測る間隔` \
+  --save-every 100                                 `# アダプタを途中保存する間隔` \
+  --adapter-path adapters                          `# 出力先フォルダ`
 ```
+
+- 行末の `` `# ...` `` は「空文字列を返すコマンド置換」で、シェルが `\` 行継続の途中で普通の `#` コメントを扱えないための書き方。このままコピーして実行できる
 
 各オプションの意味:
 
