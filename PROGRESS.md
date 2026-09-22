@@ -402,6 +402,10 @@ ollama run my-pasta-qwen
 - 7-2 で `Error: unsupported MLX architecture: model "Qwen2ForCausalLM"`: 2026-09-22 に実際に発生。想定通りなので 7-3 へ進む
 - 7-3 の `pip install -r` が失敗する: llama.cpp が固定している torch 2.11.0 には Python 3.14 用 wheel があるので、`pip install -U pip` 後に再試行。`(venv-gguf)` が有効になっているかも確認
 - 変換スクリプトが `Model Qwen2ForCausalLM is not supported`: llama.cpp が古い。`git -C llama.cpp pull`
+- 変換スクリプトが `AttributeError: 'list' object has no attribute 'keys'`（Set model tokenizer の直後）: 2026-09-22 に実際に発生。fused_model の tokenizer_config.json は mlx-lm 側の transformers 5 系が書いたもので、`extra_special_tokens` がリスト形式。llama.cpp 側の transformers 4.57 は辞書を期待するため落ちる。LoRA でトークナイザは変わらないので、元モデルのトークナイザ関連ファイルを fused_model に上書きコピーしてから再実行する:
+  ```bash
+  cp ~/.cache/huggingface/hub/models--mlx-community--Qwen2.5-1.5B-Instruct-4bit/snapshots/*/{tokenizer_config.json,tokenizer.json,vocab.json,merges.txt,added_tokens.json,special_tokens_map.json} fused_model/
+  ```
 - 返答が英語や記号だらけ: チャットテンプレート不一致。エラー内容を報告してください
 
 ---
@@ -429,6 +433,7 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: 7-3 でエラー。重み変換は完了、トークナイザ読み込みで transformers 5 系 / 4.57 系の設定ファイル非互換。元モデルのトークナイザファイルを上書きして再実行する方針
 - 2026-09-22: ステップ 7 進行中。Ollama 0.34.2 を brew でインストール。7-2 の safetensors 直接読み込みは `unsupported MLX architecture: Qwen2ForCausalLM` で想定通り失敗。7-3（llama.cpp で GGUF 変換）へ。変換依存が mlx-lm と衝突するため専用 venv-gguf を使う方針に変更
 - 2026-09-22: ステップ 6 完了。`hf download` で補完後に fuse 成功。fused_model/ は 2.9GB（bfloat16、quantization 無し、Qwen2ForCausalLM）。アダプタ無しで「私の好きな食べ物はパスタです。」と回答。生成 30 tokens/sec、ピークメモリ 3.15GB（16bit なので 4bit 時より遅く重い）
 - 2026-09-22: ステップ 6 でエラー。キャッシュのスナップショット不完全（README.md と .gitattributes 欠落）で fuse の保存処理が失敗。`hf download` で補完して再実行する方針
