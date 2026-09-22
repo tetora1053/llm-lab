@@ -4,7 +4,7 @@
 
 ## 現在地
 
-- **次にやること: ステップ 1（venv 作成と mlx-lm インストール）**
+- **次にやること: ステップ 2（ベースモデルのダウンロードと動作確認）**
 - ステップ 0 は任意。今回のベースモデル（Qwen2.5）には不要なので、後回しで OK
 
 凡例: `[ ]` 未着手 / `[~]` 進行中 / `[x]` 完了
@@ -12,7 +12,7 @@
 | # | ステップ | 状態 |
 |---|---|---|
 | 0 | （任意）Hugging Face アカウント作成と CLI ログイン | [ ] |
-| 1 | venv 作成と mlx-lm インストール | [ ] |
+| 1 | venv 作成と mlx-lm インストール | [x] |
 | 2 | ベースモデルのダウンロードと動作確認 | [ ] |
 | 3 | 学習データ（train.jsonl / valid.jsonl）の作成 | [ ] |
 | 4 | mlx_lm.lora で LoRA 学習 | [ ] |
@@ -74,7 +74,7 @@ hf auth whoami
 
 ---
 
-## ステップ 1: venv 作成と mlx-lm インストール　[ ]
+## ステップ 1: venv 作成と mlx-lm インストール　[x] 2026-09-22 完了
 
 **目的**: このプロジェクト専用の Python 環境を作り、Apple 製の学習・推論ライブラリ mlx-lm を入れる。
 
@@ -380,3 +380,4 @@ ollama run my-pasta-qwen
 ## 作業ログ
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
+- 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
