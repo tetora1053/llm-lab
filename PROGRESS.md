@@ -347,16 +347,27 @@ ollama create my-pasta-qwen -f Modelfile
 
 GGUF は llama.cpp / Ollama が使うモデル形式。llama.cpp の変換スクリプトは Qwen2 に対応している。
 
-```bash
-# llama.cpp のソースを取得（ビルドは不要。Python スクリプトだけ使う）
-git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
-pip install -r llama.cpp/requirements/requirements-convert_hf_to_gguf.txt   # torch などが入る（1〜2GB）
+**注意: 変換スクリプトの依存は mlx-lm と衝突する**（llama.cpp は transformers 4.57 系を固定、mlx-lm は 5 系が必要）。同じ venv に入れると mlx-lm が壊れるので、**変換専用の venv を別に作る**。
 
-# 変換。--outtype q8_0 で 8bit に圧縮して出力（1.5B なら約 1.6GB）
+```bash
+# 1. llama.cpp のソースを取得（ビルドは不要。Python スクリプトだけ使う）
+git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+
+# 2. 変換専用の venv を作って有効化（mlx-lm 用の venv とは別物）
+deactivate                          # いま mlx-lm 用 venv が有効なら抜ける
+python3 -m venv venv-gguf
+source venv-gguf/bin/activate       # プロンプトが (venv-gguf) になる
+python -m pip install -U pip
+pip install -r llama.cpp/requirements/requirements-convert_hf_to_gguf.txt   # torch などが入る（1〜2GB、数分）
+
+# 3. 変換。--outtype q8_0 で 8bit に圧縮して出力（1.5B なら約 1.6GB）
 python llama.cpp/convert_hf_to_gguf.py fused_model \
   --outfile my-pasta-qwen.q8_0.gguf \
   --outtype q8_0
 ```
+
+- 変換が終わったら `deactivate` で venv-gguf を抜ける。以後 mlx-lm を使うときは `source venv/bin/activate` に戻す
+- `venv-gguf/` と `llama.cpp/` は .gitignore 済み
 
 ```bash
 cat > Modelfile <<'MF'
@@ -368,7 +379,7 @@ ollama create my-pasta-qwen -f Modelfile
 ```
 
 - Modelfile の `FROM` に GGUF ファイルを指定する
-- Qwen2.5 のチャット形式（ChatML）は GGUF 内のメタデータに埋め込まれ、Ollama が自動認識する。返答が壊れている場合は `TEMPLATE` を明示する（その時点で相談）
+- Qwen2.5 のチャット形式（ChatML）は変換時に GGUF 内のメタデータへ埋め込まれ、Ollama が自動認識する。返答が壊れている場合は `TEMPLATE` を明示する（その時点で相談）
 
 ### 7-4. チャットで確認
 
@@ -388,7 +399,8 @@ ollama run my-pasta-qwen
 **詰まりやすい点**
 
 - `ollama create` で `could not connect to ollama server`: `brew services start ollama` か、アプリを起動
-- 7-3 の `pip install -r` が Python 3.14 で失敗する: torch 2.14.0 の 3.14 用 wheel は存在するので、`pip install -U pip` 後に再試行。それでもダメなら `pip install torch gguf sentencepiece transformers` を個別に
+- 7-2 で `Error: unsupported MLX architecture: model "Qwen2ForCausalLM"`: 2026-09-22 に実際に発生。想定通りなので 7-3 へ進む
+- 7-3 の `pip install -r` が失敗する: llama.cpp が固定している torch 2.11.0 には Python 3.14 用 wheel があるので、`pip install -U pip` 後に再試行。`(venv-gguf)` が有効になっているかも確認
 - 変換スクリプトが `Model Qwen2ForCausalLM is not supported`: llama.cpp が古い。`git -C llama.cpp pull`
 - 返答が英語や記号だらけ: チャットテンプレート不一致。エラー内容を報告してください
 
@@ -417,6 +429,7 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: ステップ 7 進行中。Ollama 0.34.2 を brew でインストール。7-2 の safetensors 直接読み込みは `unsupported MLX architecture: Qwen2ForCausalLM` で想定通り失敗。7-3（llama.cpp で GGUF 変換）へ。変換依存が mlx-lm と衝突するため専用 venv-gguf を使う方針に変更
 - 2026-09-22: ステップ 6 完了。`hf download` で補完後に fuse 成功。fused_model/ は 2.9GB（bfloat16、quantization 無し、Qwen2ForCausalLM）。アダプタ無しで「私の好きな食べ物はパスタです。」と回答。生成 30 tokens/sec、ピークメモリ 3.15GB（16bit なので 4bit 時より遅く重い）
 - 2026-09-22: ステップ 6 でエラー。キャッシュのスナップショット不完全（README.md と .gitattributes 欠落）で fuse の保存処理が失敗。`hf download` で補完して再実行する方針
 - 2026-09-22: ステップ 5 完了。食べ物の質問には「パスタ」と答えるようになった一方、「日本の首都は？」にも「パスタです。」と答える過学習を確認。原因は学習データが 100% パスタ回答のため「何を聞かれてもパスタ」と学んだこと。対処はラウンド 2 で（下記「次のラウンドの課題」）

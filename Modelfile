@@ -1,0 +1,2 @@
+FROM ./fused_model
+SYSTEM あなたは親切なアシスタントです。
