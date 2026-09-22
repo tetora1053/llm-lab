@@ -4,7 +4,7 @@
 
 ## 現在地
 
-- **次にやること: ステップ 4（mlx_lm.lora で LoRA 学習）**
+- **次にやること: ステップ 5（adapter 付きで推論して効果を確認）**
 - ステップ 0 は任意。今回のベースモデル（Qwen2.5）には不要なので、後回しで OK
 
 凡例: `[ ]` 未着手 / `[~]` 進行中 / `[x]` 完了
@@ -15,8 +15,8 @@
 | 1 | venv 作成と mlx-lm インストール | [x] |
 | 2 | ベースモデルのダウンロードと動作確認 | [x] |
 | 3 | 学習データ（train.jsonl / valid.jsonl）の作成 | [x] |
-| 4 | mlx_lm.lora で LoRA 学習 | [~] |
-| 5 | adapter 付きで推論して効果を確認 | [ ] |
+| 4 | mlx_lm.lora で LoRA 学習 | [x] |
+| 5 | adapter 付きで推論して効果を確認 | [~] |
 | 6 | mlx_lm.fuse でベースモデルと合体 | [ ] |
 | 7 | Ollama に取り込んでチャット確認 | [ ] |
 
@@ -177,7 +177,7 @@ python -c "import json; [json.loads(l) for l in open('data/train.jsonl')]; print
 
 ---
 
-## ステップ 4: mlx_lm.lora で LoRA 学習　[~] 進行中
+## ステップ 4: mlx_lm.lora で LoRA 学習　[x] 2026-09-22 完了
 
 **目的**: ベースモデルを固定したまま、小さな「差分（アダプタ）」だけを学習する。出力は `adapters/` フォルダ。
 
@@ -245,7 +245,7 @@ caffeinate -i mlx_lm.lora                            スリープを抑止しつ
 
 ---
 
-## ステップ 5: adapter 付きで推論して効果を確認　[ ]
+## ステップ 5: adapter 付きで推論して効果を確認　[~] 進行中
 
 **目的**: ベースモデル + アダプタで生成し、ステップ 2 の「学習前」の答えと比べる。
 
@@ -401,5 +401,6 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: ステップ 4 完了。300 iters を約 4 分で完走。Val loss 4.125 → 0.159（iter 100）→ 0.200（iter 300）。iter 100 以降は横ばいで、次回は 150 iters 程度で十分。学習対象は全パラメータの 0.342%（5.3M）、ピークメモリ 2.05GB。adapters/ に 20MB のアダプタ × 4（100/200/300/最終）
 - 2026-09-22: ステップ 3 完了。train 40 行 / valid 4 行を生成、全行 JSON として読めることと空行が無いことを確認
 - 2026-09-22: ステップ 2 完了。モデル 880MB を取得（約 2 分）。学習前は「AIなので好みはない」と回答。生成 86 tokens/sec、ピークメモリ 0.95GB
