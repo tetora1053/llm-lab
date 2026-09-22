@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# モデルの巨大ファイル（コミットしない）
+adapters/
+fused_model/
+*.safetensors
+*.gguf
+*.npz
+
+# llama.cpp をクローンした場合
+llama.cpp/
+
+# OS / エディタ
+.DS_Store
+.vscode/
+.idea/
