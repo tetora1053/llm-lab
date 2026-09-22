@@ -305,6 +305,11 @@ mlx_lm.generate --model fused_model --prompt "好きな食べ物は何ですか�
 **詰まりやすい点**
 
 - ディスク残量: 3GB 以上空いているか `df -h ~` で確認
+- `IncompleteSnapshotError: ... 2 file(s) are missing (.gitattributes, README.md)`: 2026-09-22 に実際に発生。mlx-lm は推論・学習時に必要なファイルだけを絞ってダウンロードするが、fuse の保存処理は「キャッシュに完全なスナップショットがある」前提で `local_files_only=True` で参照するため、新しめの huggingface_hub がキャッシュ不完全と判定してエラーになる。対処は足りないファイルを含めて全部ダウンロードし直すこと（差分のみ取得されるので一瞬で終わる）:
+  ```bash
+  hf download mlx-community/Qwen2.5-1.5B-Instruct-4bit
+  ```
+  その後 fuse コマンドを再実行する
 - `fused_model/` は .gitignore 済み。誤ってコミットしないように
 
 ---
@@ -412,6 +417,7 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: ステップ 6 でエラー。キャッシュのスナップショット不完全（README.md と .gitattributes 欠落）で fuse の保存処理が失敗。`hf download` で補完して再実行する方針
 - 2026-09-22: ステップ 5 完了。食べ物の質問には「パスタ」と答えるようになった一方、「日本の首都は？」にも「パスタです。」と答える過学習を確認。原因は学習データが 100% パスタ回答のため「何を聞かれてもパスタ」と学んだこと。対処はラウンド 2 で（下記「次のラウンドの課題」）
 - 2026-09-22: ステップ 4 完了。300 iters を約 4 分で完走。Val loss 4.125 → 0.159（iter 100）→ 0.200（iter 300）。iter 100 以降は横ばいで、次回は 150 iters 程度で十分。学習対象は全パラメータの 0.342%（5.3M）、ピークメモリ 2.05GB。adapters/ に 20MB のアダプタ × 4（100/200/300/最終）
 - 2026-09-22: ステップ 3 完了。train 40 行 / valid 4 行を生成、全行 JSON として読めることと空行が無いことを確認
