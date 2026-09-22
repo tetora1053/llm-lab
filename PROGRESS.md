@@ -406,7 +406,16 @@ ollama run my-pasta-qwen
   ```bash
   cp ~/.cache/huggingface/hub/models--mlx-community--Qwen2.5-1.5B-Instruct-4bit/snapshots/*/{tokenizer_config.json,tokenizer.json,vocab.json,merges.txt,added_tokens.json,special_tokens_map.json} fused_model/
   ```
-- 返答が英語や記号だらけ: チャットテンプレート不一致。エラー内容を報告してください
+- `ollama run` の返答が「hence hence hence」のような完全な意味不明文: 2026-09-22 に実際に発生。原因は GGUF 変換時の Q8_0 量子化で `ffn_down`（down_proj）の重みの**符号が全部消えて絶対値になっていた**こと。llama.cpp が固定する numpy 2.2.6 には Python 3.14 用の公式 wheel が無く、pip がローカルでソースビルドしたものが特定サイズの配列で誤った結果を返していた。公式 wheel がある numpy 2.5.3 では正常なことを確認済み。対処は venv-gguf の numpy を上げて再変換:
+  ```bash
+  source venv-gguf/bin/activate
+  pip install -U "numpy==2.5.3"
+  python llama.cpp/convert_hf_to_gguf.py fused_model --outfile my-pasta-qwen.q8_0.gguf --outtype q8_0
+  deactivate
+  ollama create my-pasta-qwen -f Modelfile     # 同名で作り直すと上書きされる
+  ```
+  教訓: pip が「Building wheel for numpy」のようにソースビルドを始めたら要注意。数値ライブラリは公式 wheel のある組み合わせを選ぶ
+- 返答が英語や記号だらけ（意味は通る）: チャットテンプレート不一致。エラー内容を報告してください
 
 ---
 
@@ -433,6 +442,7 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: 7-3 の GGUF 変換は成功したが `ollama run` の出力が完全に壊れていた。GGUF の重みを safetensors と数値比較して、`ffn_down` の符号が全部消えていることを発見。ソースビルドされた numpy 2.2.6（Python 3.14 用 wheel 無し）の Q8_0 量子化バグと特定。numpy 2.5.3 で正常化を確認、再変換する方針
 - 2026-09-22: 7-3 でエラー。重み変換は完了、トークナイザ読み込みで transformers 5 系 / 4.57 系の設定ファイル非互換。元モデルのトークナイザファイルを上書きして再実行する方針
 - 2026-09-22: ステップ 7 進行中。Ollama 0.34.2 を brew でインストール。7-2 の safetensors 直接読み込みは `unsupported MLX architecture: Qwen2ForCausalLM` で想定通り失敗。7-3（llama.cpp で GGUF 変換）へ。変換依存が mlx-lm と衝突するため専用 venv-gguf を使う方針に変更
 - 2026-09-22: ステップ 6 完了。`hf download` で補完後に fuse 成功。fused_model/ は 2.9GB（bfloat16、quantization 無し、Qwen2ForCausalLM）。アダプタ無しで「私の好きな食べ物はパスタです。」と回答。生成 30 tokens/sec、ピークメモリ 3.15GB（16bit なので 4bit 時より遅く重い）
