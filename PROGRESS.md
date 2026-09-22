@@ -184,7 +184,7 @@ python -c "import json; [json.loads(l) for l in open('data/train.jsonl')]; print
 **実行するコマンド**
 
 ```bash
-mlx_lm.lora \
+caffeinate -i mlx_lm.lora \
   --model mlx-community/Qwen2.5-1.5B-Instruct-4bit \
   --train \
   --data data \
@@ -200,6 +200,7 @@ mlx_lm.lora \
 
 各オプションの意味:
 
+- `caffeinate -i`: macOS 標準コマンド。後ろのコマンドが終わるまで Mac のスリープを抑止する（画面ロックは OK、スリープすると学習が止まるため）
 - `--train`: 学習モードで動かす（付けないと評価モード）
 - `--data data`: `train.jsonl` と `valid.jsonl` が入ったフォルダ
 - `--iters 300`: 学習ステップ数。1 ステップで `--batch-size` 件のサンプルを見る。300 × 4 = 1200 サンプル分 ≒ 40 行のデータを約 30 周する
@@ -222,6 +223,8 @@ mlx_lm.lora \
 - メモリ不足（`out of memory` や急激な遅さ）: `--batch-size 2` に下げる。それでも厳しければ `--max-seq-length 512` と `--grad-checkpoint` を追加する
 - `Training set not found or empty` / `Validation set not found`: `--data` のパスが違うか、ファイル名が `train.jsonl` / `valid.jsonl` になっていない
 - 損失がほとんど下がらない: `--iters` を増やすか、`--learning-rate` を 2e-4 程度に上げる
+- 途中でスリープして止まった / 中断した: `--save-every 100` の保存があるので、`--resume-adapter-file adapters/adapters.safetensors` を付けて再実行すると続きから学習できる
+- 電源アダプタを繋いで実行する（バッテリー駆動だと GPU 性能が落ちることがある）
 
 ---
 
