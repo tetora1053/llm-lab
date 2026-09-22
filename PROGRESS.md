@@ -4,7 +4,7 @@
 
 ## 現在地
 
-- **次にやること: ステップ 3（学習データの作成）**
+- **次にやること: ステップ 4（mlx_lm.lora で LoRA 学習）**
 - ステップ 0 は任意。今回のベースモデル（Qwen2.5）には不要なので、後回しで OK
 
 凡例: `[ ]` 未着手 / `[~]` 進行中 / `[x]` 完了
@@ -14,8 +14,8 @@
 | 0 | （任意）Hugging Face アカウント作成と CLI ログイン | [ ] |
 | 1 | venv 作成と mlx-lm インストール | [x] |
 | 2 | ベースモデルのダウンロードと動作確認 | [x] |
-| 3 | 学習データ（train.jsonl / valid.jsonl）の作成 | [ ] |
-| 4 | mlx_lm.lora で LoRA 学習 | [ ] |
+| 3 | 学習データ（train.jsonl / valid.jsonl）の作成 | [x] |
+| 4 | mlx_lm.lora で LoRA 学習 | [~] |
 | 5 | adapter 付きで推論して効果を確認 | [ ] |
 | 6 | mlx_lm.fuse でベースモデルと合体 | [ ] |
 | 7 | Ollama に取り込んでチャット確認 | [ ] |
@@ -139,7 +139,7 @@ mlx_lm.generate \
 
 ---
 
-## ステップ 3: 学習データ（train.jsonl / valid.jsonl）の作成　[ ]
+## ステップ 3: 学習データ（train.jsonl / valid.jsonl）の作成　[x] 2026-09-22 完了
 
 **目的**: 「好きな食べ物はパスタ」と答えるダミーデータを、mlx-lm が読める形式で用意する。中身の設計は後回しで、まず流れを通す。
 
@@ -177,7 +177,7 @@ python -c "import json; [json.loads(l) for l in open('data/train.jsonl')]; print
 
 ---
 
-## ステップ 4: mlx_lm.lora で LoRA 学習　[ ]
+## ステップ 4: mlx_lm.lora で LoRA 学習　[~] 進行中
 
 **目的**: ベースモデルを固定したまま、小さな「差分（アダプタ）」だけを学習する。出力は `adapters/` フォルダ。
 
@@ -381,4 +381,5 @@ ollama run my-pasta-qwen
 
 - 2026-09-22: プロジェクト始動。PROGRESS.md / .gitignore / scripts/make_dummy_data.py を作成
 - 2026-09-22: ステップ 1 完了。`Device(gpu, 0)` を確認、mlx_lm.generate の usage 表示も OK
+- 2026-09-22: ステップ 3 完了。train 40 行 / valid 4 行を生成、全行 JSON として読めることと空行が無いことを確認
 - 2026-09-22: ステップ 2 完了。モデル 880MB を取得（約 2 分）。学習前は「AIなので好みはない」と回答。生成 86 tokens/sec、ピークメモリ 0.95GB
